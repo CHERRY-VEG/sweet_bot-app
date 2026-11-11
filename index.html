@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Наше приложение</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg:#15121c; --card:#201b2b; --card2:#2a2438; --text:#f4efff; --hint:#9d93b5;
+    --coral:#ff7a6b; --mint:#4fe0b5; --lav:#a99bff; --amber:#ffc46b; --sky:#6bc4ff;
+    --accent:#ff7a6b;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); padding-bottom:90px; }
+  header { padding:16px 16px 4px; }
+  h1 { margin:0; font-size:22px; }
+  .sub { color:var(--hint); font-size:14px; margin-top:4px; }
+  main { padding:8px 16px; }
+  .empty { text-align:center; color:var(--hint); padding:28px 10px; }
+  button { font-family:inherit; }
+
+  /* Обычные списки */
+  .add { background:var(--card); border-radius:16px; padding:12px; margin:12px 0; display:flex; flex-direction:column; gap:8px; }
+  input[type=text], input[type=number], input[type=date], input[type=time], textarea { width:100%; font-family:inherit; min-width:0; padding:10px 12px; font-size:16px;
+    border:1px solid #3a3350; border-radius:10px; background:var(--bg); color:var(--text); color-scheme:dark; }
+  .primary { padding:11px 14px; font-size:16px; border:none; border-radius:12px; background:var(--accent); color:#1a1020; font-weight:600; cursor:pointer; }
+  .item { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:12px; margin-bottom:8px; }
+  .item input[type=checkbox] { width:22px; height:22px; accent-color:var(--accent); flex-shrink:0; }
+  .item .body { flex:1; min-width:0; word-wrap:break-word; }
+  .item.done .body { text-decoration:line-through; color:var(--hint); }
+  .del { background:none; border:none; font-size:18px; color:var(--hint); cursor:pointer; padding:4px 8px; }
+  .section-title { font-size:12px; color:var(--hint); margin:16px 0 8px; text-transform:uppercase; letter-spacing:.05em; }
+
+  /* Расписание */
+  .weekbar { display:flex; align-items:center; justify-content:space-between; margin:6px 0 10px; }
+  .weekbar .month { font-weight:600; text-transform:capitalize; }
+  .navbtn { background:var(--card); color:var(--text); border:none; border-radius:10px; padding:8px 12px; font-size:15px; cursor:pointer; }
+  .days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day { background:var(--card); border:2px solid transparent; border-radius:14px; padding:8px 0 6px; text-align:center; color:var(--text); cursor:pointer; }
+  .day .wd { font-size:11px; color:var(--hint); }
+  .day .num { font-size:17px; font-weight:600; margin:2px 0 4px; }
+  .day.today .num { color:var(--coral); }
+  .day.sel { border-color:var(--coral); background:var(--card2); }
+  .dots { display:flex; justify-content:center; gap:3px; height:6px; }
+  .dot { width:6px; height:6px; border-radius:50%; }
+  .daytitle { font-size:17px; font-weight:600; margin:18px 0 8px; text-transform:capitalize; }
+  .status { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .stat { background:var(--card); border-radius:14px; padding:10px 12px; }
+  .stat .lab { font-size:11px; color:var(--hint); text-transform:uppercase; letter-spacing:.04em; }
+  .stat .val { font-size:14px; margin-top:4px; word-wrap:break-word; }
+  .stat.miss .val { color:var(--hint); font-style:italic; }
+  .card { display:flex; gap:10px; background:var(--card); border-radius:14px; padding:12px; margin-bottom:8px; border-left:5px solid var(--c); }
+  .card .ic { font-size:20px; }
+  .card .info { flex:1; min-width:0; }
+  .card .t { font-weight:600; word-wrap:break-word; }
+  .card .m { font-size:13px; color:var(--hint); margin-top:3px; word-wrap:break-word; }
+  .chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; background:var(--card2); color:var(--text); margin-left:6px; }
+  .fab { position:fixed; right:16px; bottom:84px; width:56px; height:56px; border-radius:50%; border:none;
+    background:var(--coral); color:#1a1020; font-size:30px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.45); z-index:5; }
+
+  .seg { display:flex; background:var(--card); border-radius:14px; padding:4px; gap:4px; margin:4px 0 10px; }
+  .seg button { flex:1; border:none; background:none; color:var(--hint); padding:9px 4px; border-radius:11px; font-size:15px; cursor:pointer; }
+  .seg button.on { background:var(--card2); color:var(--text); font-weight:600; box-shadow:inset 0 0 0 2px var(--coral); }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cwd { text-align:center; font-size:11px; color:var(--hint); padding:2px 0; }
+  .cell { background:var(--card); border:2px solid transparent; border-radius:9px; min-height:54px; padding:3px 2px; color:var(--text);
+    text-align:center; cursor:pointer; display:flex; flex-direction:column; gap:2px; overflow:hidden; font-family:inherit; }
+  .cell.blank { background:none; pointer-events:none; }
+  .cell .cn { font-size:12px; font-weight:600; }
+  .cell.today .cn { color:var(--coral); }
+  .cell.sel { border-color:var(--coral); background:var(--card2); }
+  .cell.hasstay { box-shadow:inset 0 -3px 0 var(--lav); }
+  .pill { font-size:8px; line-height:11px; height:11px; border-radius:4px; color:#1a1020; font-weight:600; padding:0 2px;
+    overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .more { font-size:9px; color:var(--hint); }
+
+  textarea { resize:vertical; }
+  .wish { background:var(--card); border-radius:16px; margin-bottom:10px; overflow:hidden; }
+  .wish.done { opacity:.65; }
+  .whead { display:flex; gap:12px; padding:12px; cursor:pointer; align-items:center; }
+  .thumb { width:64px; height:64px; border-radius:12px; background:var(--card2); display:flex; align-items:center; justify-content:center; font-size:28px; overflow:hidden; flex-shrink:0; }
+  .thumb img { width:100%; height:100%; object-fit:cover; }
+  .winfo { flex:1; min-width:0; }
+  .winfo .t { font-weight:600; word-wrap:break-word; }
+  .winfo .m { font-size:13px; color:var(--hint); margin-top:2px; }
+  .price { color:var(--mint); font-weight:600; margin-top:3px; font-size:14px; }
+  .wbody { padding:0 12px 14px; }
+  .wdesc { font-size:14px; color:var(--hint); white-space:pre-wrap; word-wrap:break-word; }
+  .offer { display:flex; align-items:center; gap:8px; background:var(--card2); border-radius:10px; padding:9px 10px; margin-bottom:6px; font-size:14px; }
+  .offer.best { box-shadow:inset 0 0 0 2px var(--mint); }
+  .offer .st { flex:1; min-width:0; word-wrap:break-word; }
+  .offer .pr { font-weight:600; }
+  .openbtn { background:var(--coral); color:#1a1020; border:none; border-radius:8px; padding:6px 10px; font-size:13px; font-weight:600; cursor:pointer; }
+  .mini { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; }
+  .mini .full { grid-column:1/-1; }
+  .photoprev { width:96px; height:96px; object-fit:cover; border-radius:12px; margin-top:8px; }
+
+  .hintline { font-size:12px; color:var(--hint); margin-top:6px; }
+  .gomap { width:100%; margin:10px 0 4px; }
+
+  .three { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .rthumb { width:36px; height:52px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+
+  .res { display:flex; gap:10px; align-items:center; background:var(--card2); border-radius:10px; padding:8px; margin-bottom:6px; cursor:pointer; }
+  .res img { width:40px; height:56px; object-fit:cover; border-radius:6px; background:var(--card); }
+  .res .rt { font-size:12px; color:var(--mint); }
+
+  .shopbtn { width:100%; margin-bottom:10px; }
+  .item .m { font-size:12px; color:var(--hint); margin-top:2px; }
+
+  .addrow { display:flex; gap:8px; margin-bottom:12px; }
+  .addrow input { flex:1; }
+  .thumb.s { width:44px; height:44px; font-size:20px; border-radius:10px; }
+  .btns { flex-wrap:wrap; }
+  .btns button { min-width:110px; }
+
+  .citem { background:var(--card); border-radius:14px; margin-bottom:8px; overflow:hidden; }
+  .citem.done { opacity:.7; }
+  .citem.done .cname .t { text-decoration:line-through; color:var(--hint); }
+  .crow { display:flex; align-items:center; gap:6px; padding:10px; }
+  .cleft { flex:1; min-width:0; display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .circ { width:22px; height:22px; border-radius:50%; border:2px solid var(--hint); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:#1a1020; }
+  .circ.on { background:var(--mint); border-color:var(--mint); }
+  .cname { min-width:0; word-wrap:break-word; }
+  .cname .m { font-size:12px; color:var(--hint); margin-top:2px; }
+  .stepper { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .sbtn { width:28px; height:28px; border:none; border-radius:8px; background:var(--card2); color:var(--text); font-size:18px; cursor:pointer; padding:0; }
+  .qcol { display:flex; flex-direction:column; align-items:center; }
+  input.qinp { width:44px; padding:2px; text-align:center; font-size:15px; height:24px; border-radius:6px; -moz-appearance:textfield; }
+  input.qinp::-webkit-inner-spin-button, input.qinp::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .unit { font-size:10px; color:var(--hint); }
+  .mbtn { background:none; border:none; color:var(--hint); font-size:13px; cursor:pointer; padding:4px 2px; }
+  .cpanel { padding:0 12px 12px; }
+  .cpanel select { width:100%; padding:10px 12px; font-size:16px; border:1px solid #3a3350; border-radius:10px; background:var(--bg); color:var(--text); }
+  .cartsum { font-size:14px; color:var(--mint); font-weight:600; margin:4px 0 8px; }
+  .cartbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; align-items:center; }
+  .cartbar button { flex:1 1 30%; font-size:14px; padding:10px 6px; }
+  button:disabled { opacity:.4; cursor:default; }
+
+  .ver { position:fixed; left:8px; bottom:calc(env(safe-area-inset-bottom,0px) + 62px); font-size:10px; color:var(--hint); opacity:.7; pointer-events:none; z-index:6; }
+
+  /* Форма добавления */
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:20; display:flex; align-items:flex-end; }
+  .sheet { background:var(--card); width:100%; max-height:90%; overflow-y:auto; border-radius:22px 22px 0 0; padding:16px 16px 28px; }
+  .sheet h2 { margin:0 0 12px; font-size:18px; }
+  .lab2 { font-size:12px; color:var(--hint); margin:12px 0 6px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .pick { background:var(--bg); color:var(--text); border:2px solid transparent; border-radius:20px; padding:8px 12px; font-size:14px; cursor:pointer; }
+  .pick.on { border-color:var(--c, var(--coral)); background:var(--card2); }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .btns { display:flex; gap:8px; margin-top:16px; }
+  .btns button { flex:1; }
+  .ghost { background:var(--card2); color:var(--text); border:none; border-radius:12px; padding:11px; font-size:16px; cursor:pointer; }
+
+  nav { position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--card); border-top:1px solid #332c45;
+    padding-bottom:env(safe-area-inset-bottom,0px); z-index:10; }
+  nav button { flex:1; background:none; border:none; padding:8px 2px; color:var(--hint); font-size:10px; cursor:pointer; }
+  nav button .ico { display:block; font-size:22px; margin-bottom:2px; }
+  nav button.active { color:var(--coral); font-weight:600; }
+</style>
+</head>
+<body>
+<header><h1 id="title"></h1><div class="sub" id="subtitle"></div></header>
+<main id="content"></main>
+<nav id="nav"></nav>
+<div class="ver" id="ver"></div>
+
+<script>
+  var tg = window.Telegram.WebApp;
+  tg.ready(); tg.expand();
+  // Номер версии: увеличивай при каждой правке, чтобы видеть, что обновление дошло до телефона
+  var APP_VERSION = '1.1';
+  document.getElementById('ver').textContent = 'Версия ' + APP_VERSION;
+  try { tg.setHeaderColor('#15121c'); tg.setBackgroundColor('#15121c'); } catch (e) {}
+
+  var TABS = [
+    { id:'schedule', icon:'📅', short:'Расписание', title:'Наше расписание', hint:'Где мы и чем заняты — как в ADAMS, только для двоих', schedule:true },
+    { id:'wishes', icon:'🎁', short:'Хотелки', title:'Хотелки', hint:'Ссылки, фото, цены и где купить выгоднее', placeholder:'Что хочется?' },
+    { id:'watch', icon:'🎬', short:'Смотреть', title:'Что посмотреть', hint:'Фильмы и сериалы: постер, рейтинги, трейлер', placeholder:'Название фильма или сериала' },
+    { id:'go', icon:'📍', short:'Сходить', title:'Куда сходить', hint:'Места на двоих: ссылка, адрес, фото, меню, оценка', placeholder:'Куда пойдём?' },
+    { id:'eat', icon:'🍕', short:'Поесть', title:'Что поесть', hint:'Блюда, рецепты и список покупок', placeholder:'Что хочется съесть?' },
+    { id:'buy', icon:'🛒', short:'Купить', title:'Что купить', hint:'Корзина, расходники и заказы' }
+  ];
+
+  // Типы записей расписания (по аналогии с ADAMS)
+  var TYPES = {
+    stay:    { icon:'🏠', name:'Ночёвка',   color:'#a99bff', fields:['place','range'] },
+    regular: { icon:'🔁', name:'Регулярное', color:'#4fe0b5', fields:['title','place','days','time','range'] },
+    slot:    { icon:'💞', name:'Наш час',    color:'#ff7a6b', fields:['place','date','start'] },
+    event:   { icon:'🎉', name:'Событие',    color:'#ffc46b', fields:['title','place','date','time'] },
+    away:    { icon:'✈️', name:'Поездка',    color:'#6bc4ff', fields:['title','place','range'] }
+  };
+  var WHO = ['Вместе', 'Он', 'Она'];
+  var WD = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  var KEY = 'couple-app-data-v1';
+  var data = {}, current = 'schedule';
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function ds(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate()+n); return x; }
+  function monday(d) { return addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay()+6)%7)); }
+  function plus60(t) { var p = t.split(':'); return pad((+p[0]+1)%24) + ':' + p[1]; }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  var today = ds(new Date());
+  var selected = today;
+  var monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  // Подписи переключателя. Можно заменить на ваши имена, например '👨 Кирилл'.
+  var PEOPLE = [ { who:'Он', label:'👨 Он' }, { who:'Она', label:'👩 Она' }, { who:'Вместе', label:'💑 Мы' } ];
+  var person = 'Вместе';
+
+  function load() {
+    try { var r = localStorage.getItem(KEY); data = r ? JSON.parse(r) : {}; } catch (e) { data = {}; }
+    TABS.forEach(function (t) { if (!Array.isArray(data[t.id])) data[t.id] = []; });
+    data.wishes = data.wishes.map(function (x) {
+      return x.who ? x : { id:x.id, who:'Вместе', title:x.title || x.text || 'Хотелка', desc:'', photo:'', offers:[], done:!!x.done };
+    });
+    data.go = data.go.map(function (x) {
+      return x.who ? x : { id:x.id, who:'Вместе', title:x.title || x.text || 'Место', address:'', url:'', desc:'', menu:'', photo:'', status:x.done ? 'visited' : 'want', rating:0 };
+    });
+    data.watch = data.watch.map(function (x) {
+      return x.who ? x : { id:x.id, who:'Вместе', title:x.title || x.text || 'Фильм', year:'', kind:'', genres:'', desc:'', poster:'', kp:0, imdb:0, trailer:'', kpId:0, status:x.done ? 'seen' : 'want', myRating:0 };
+    });
+    data.shop = Array.isArray(data.shop) ? data.shop : [];
+    data.shop.forEach(function (x) { if (!(x.qty > 0)) x.qty = 1; if (!x.unit) x.unit = 'шт'; if (x.note === undefined) x.note = ''; if (x.url === undefined) x.url = ''; });
+    data.supplies = Array.isArray(data.supplies) ? data.supplies : [];
+    data.orders = Array.isArray(data.orders) ? data.orders : [];
+    data.eat = data.eat.map(function (x) {
+      return x.who ? x : { id:x.id, who:'Вместе', title:x.title || x.text || 'Блюдо', desc:'', photo:'', ingredients:[], recipe:'', cooked:0 };
+    });
+    // Перенос старых записей расписания в новый формат
+    data.schedule = data.schedule.map(function (x) {
+      if (x.type) return x;
+      return { id:x.id, type:'event', who:'Вместе', title:x.text || 'Событие', place:'', date:x.date || today, start:x.time || '', end:'' };
+    });
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { alert('Не хватило памяти для сохранения. Попробуй фото поменьше.'); } }
+
+  function occurs(e, d) {
+    var wd = (parse(d).getDay()+6)%7;
+    if (e.type === 'stay' || e.type === 'away') return e.date <= d && d <= (e.dateEnd || e.date);
+    if (e.type === 'regular') return (e.days || []).indexOf(wd) > -1 && (!e.date || e.date <= d) && (!e.dateEnd || d <= e.dateEnd);
+    return e.date === d;
+  }
+  function entriesFor(d) { return data.schedule.filter(function (e) { return e.who === person && occurs(e, d); }); }
+
+  function renderNav() {
+    var nav = document.getElementById('nav'); nav.innerHTML = '';
+    TABS.forEach(function (t) {
+      var b = el('button', t.id === current ? 'active' : '');
+      b.appendChild(el('span', 'ico', t.icon)); b.appendChild(document.createTextNode(t.short));
+      b.onclick = function () { current = t.id; render(); window.scrollTo(0, 0); };
+      nav.appendChild(b);
+    });
+  }
+
+  /* ---------- Обычные списки ---------- */
+  function renderList(tab, main) {
+    var form = el('div', 'add');
+    var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = tab.placeholder;
+    var btn = el('button', 'primary', 'Добавить');
+    function add() {
+      var v = inp.value.trim(); if (!v) return;
+      data[tab.id].push({ id:Date.now(), text:v, done:false }); save(); render();
+    }
+    btn.onclick = add; inp.onkeydown = function (e) { if (e.key === 'Enter') add(); };
+    form.appendChild(inp); form.appendChild(btn); main.appendChild(form);
+
+    var list = data[tab.id];
+    if (!list.length) { main.appendChild(el('div', 'empty', 'Пока пусто. Добавьте первое ✨')); return; }
+    function row(item) {
+      var r = el('div', 'item' + (item.done ? ' done' : ''));
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
+      cb.onchange = function () { item.done = cb.checked; save(); render(); };
+      var del = el('button', 'del', '✕');
+      del.onclick = function () { if (confirm('Удалить?')) { data[tab.id] = list.filter(function (x) { return x.id !== item.id; }); save(); render(); } };
+      r.appendChild(cb); r.appendChild(el('div', 'body', item.text)); r.appendChild(del);
+      return r;
+    }
+    list.filter(function (x) { return !x.done; }).forEach(function (i) { main.appendChild(row(i)); });
+    var done = list.filter(function (x) { return x.done; });
+    if (done.length) { main.appendChild(el('div', 'section-title', 'Готово (' + done.length + ')')); done.forEach(function (i) { main.appendChild(row(i)); }); }
+  }
+
+  /* ---------- Расписание ---------- */
+  function renderSchedule(main) {
+    // Переключатель: Он / Она / Мы
+    var seg = el('div', 'seg');
+    PEOPLE.forEach(function (p) {
+      var b = el('button', person === p.who ? 'on' : '', p.label);
+      b.onclick = function () { person = p.who; render(); };
+      seg.appendChild(b);
+    });
+    main.appendChild(seg);
+
+    // Месяц
+    var y = monthStart.getFullYear(), m = monthStart.getMonth();
+    var bar = el('div', 'weekbar');
+    var prev = el('button', 'navbtn', '‹'); prev.onclick = function () { monthStart = new Date(y, m - 1, 1); render(); };
+    var next = el('button', 'navbtn', '›'); next.onclick = function () { monthStart = new Date(y, m + 1, 1); render(); };
+    var tb = el('button', 'navbtn', 'Сегодня');
+    tb.onclick = function () { var n = new Date(); monthStart = new Date(n.getFullYear(), n.getMonth(), 1); selected = today; render(); };
+    bar.appendChild(prev); bar.appendChild(el('div', 'month', monthStart.toLocaleDateString('ru-RU', { month:'long', year:'numeric' })));
+    bar.appendChild(tb); bar.appendChild(next);
+    main.appendChild(bar);
+
+    function shortText(e) {
+      if (e.type === 'slot') return '💞' + e.start;
+      if (e.type === 'away') return '✈️' + e.title;
+      return e.title;
+    }
+    var cal = el('div', 'cal');
+    WD.forEach(function (w) { cal.appendChild(el('div', 'cwd', w)); });
+    var first = (monthStart.getDay() + 6) % 7;
+    var count = new Date(y, m + 1, 0).getDate();
+    for (var i = 0; i < first; i++) cal.appendChild(el('div', 'cell blank'));
+    for (var n = 1; n <= count; n++) {
+      (function (n) {
+        var s = ds(new Date(y, m, n));
+        var list = entriesFor(s);
+        var items = list.filter(function (e) { return e.type !== 'stay'; }).sort(function (a, b) { return (a.start || '') < (b.start || '') ? -1 : 1; });
+        var c = el('button', 'cell' + (s === today ? ' today' : '') + (s === selected ? ' sel' : '') +
+          (list.some(function (e) { return e.type === 'stay'; }) ? ' hasstay' : ''));
+        c.appendChild(el('div', 'cn', String(n)));
+        items.slice(0, 2).forEach(function (e) {
+          var p = el('div', 'pill', shortText(e)); p.style.background = TYPES[e.type].color; c.appendChild(p);
+        });
+        if (items.length > 2) c.appendChild(el('div', 'more', '+' + (items.length - 2)));
+        c.onclick = function () { selected = s; render(); };
+        cal.appendChild(c);
+      })(n);
+    }
+    main.appendChild(cal);
+
+    // Выбранный день
+    main.appendChild(el('div', 'daytitle', parse(selected).toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' })));
+    var list = entriesFor(selected);
+
+    var stay = list.filter(function (e) { return e.type === 'stay'; })[0];
+    var slot = list.filter(function (e) { return e.type === 'slot'; })[0];
+    var st = el('div', 'status');
+    function stat(lab, val, ok) {
+      var s = el('div', 'stat' + (ok ? '' : ' miss')); s.appendChild(el('div', 'lab', lab)); s.appendChild(el('div', 'val', val)); st.appendChild(s);
+    }
+    stat('🏠 Где ночуем', stay ? stay.place : 'не указано', !!stay);
+    stat('💞 Наш час', slot ? slot.start + '–' + plus60(slot.start) + (slot.place ? ', ' + slot.place : '') : 'не назначен', !!slot);
+    main.appendChild(st);
+
+    list.sort(function (a, b) { return (a.start || '') < (b.start || '') ? -1 : 1; });
+    if (!list.length) main.appendChild(el('div', 'empty', 'На этот день ничего нет. Нажми + чтобы добавить'));
+    list.forEach(function (e) {
+      var T = TYPES[e.type];
+      var c = el('div', 'card'); c.style.setProperty('--c', T.color);
+      c.appendChild(el('div', 'ic', T.icon));
+      var info = el('div', 'info');
+      info.appendChild(el('div', 't', e.type === 'stay' ? 'Ночуем: ' + e.place : (e.type === 'slot' ? 'Наш час' : e.title)));
+      var meta = [];
+      if (e.type === 'slot') meta.push(e.start + '–' + plus60(e.start));
+      else if (e.start) meta.push(e.start + (e.end ? '–' + e.end : ''));
+      if (e.type === 'regular') meta.push('повтор: ' + e.days.map(function (k) { return WD[k]; }).join(', '));
+      if ((e.type === 'stay' || e.type === 'away') && e.dateEnd && e.dateEnd !== e.date) meta.push(e.date.split('-').reverse().join('.') + ' – ' + e.dateEnd.split('-').reverse().join('.'));
+      if (e.place && e.type !== 'stay') meta.push('📍 ' + e.place);
+      if (meta.length) info.appendChild(el('div', 'm', meta.join(' · ')));
+      c.appendChild(info);
+      var del = el('button', 'del', '✕');
+      del.onclick = function () {
+        if (confirm(e.type === 'regular' ? 'Удалить все повторы?' : 'Удалить?')) { data.schedule = data.schedule.filter(function (x) { return x.id !== e.id; }); save(); render(); }
+      };
+      c.appendChild(del); main.appendChild(c);
+    });
+
+    var fab = el('button', 'fab', '+'); fab.onclick = openForm; main.appendChild(fab);
+  }
+
+  /* ---------- Форма добавления ---------- */
+  function openForm() {
+    var f = { type:'event', who:person, title:'', place:'', date:selected, dateEnd:selected, start:'', end:'', days:[] };
+    var ov = el('div', 'overlay'), sh = el('div', 'sheet');
+    ov.appendChild(sh); document.body.appendChild(ov);
+    ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
+
+    function chips(items, isOn, onPick, colorFn) {
+      var box = el('div', 'chips');
+      items.forEach(function (it) {
+        var b = el('button', 'pick' + (isOn(it) ? ' on' : ''), it.label);
+        if (colorFn) b.style.setProperty('--c', colorFn(it));
+        b.onclick = function () { onPick(it.value); draw(); };
+        box.appendChild(b);
+      });
+      return box;
+    }
+    function input(type, key, ph) {
+      var i = document.createElement('input'); i.type = type; i.value = f[key] || ''; if (ph) i.placeholder = ph;
+      i.oninput = function () { f[key] = i.value; }; return i;
+    }
+    function label(t) { return el('div', 'lab2', t); }
+
+    function draw() {
+      sh.innerHTML = '';
+      sh.appendChild(el('h2', '', 'Новая запись: ' + PEOPLE.filter(function (p) { return p.who === person; })[0].label));
+      sh.appendChild(chips(Object.keys(TYPES).map(function (k) { return { value:k, label:TYPES[k].icon + ' ' + TYPES[k].name }; }),
+        function (it) { return it.value === f.type; }, function (v) { f.type = v; },
+        function (it) { return TYPES[it.value].color; }));
+
+      var fl = TYPES[f.type].fields;
+      if (fl.indexOf('title') > -1) { sh.appendChild(label('Название')); sh.appendChild(input('text', 'title', 'Например: тренировка')); }
+      if (fl.indexOf('place') > -1) { sh.appendChild(label(f.type === 'stay' ? 'Адрес, где ночуем' : 'Место (адрес)')); sh.appendChild(input('text', 'place', 'Адрес или название места')); }
+      if (fl.indexOf('days') > -1) {
+        sh.appendChild(label('По каким дням'));
+        sh.appendChild(chips(WD.map(function (w, i) { return { value:i, label:w }; }), function (it) { return f.days.indexOf(it.value) > -1; },
+          function (v) { var k = f.days.indexOf(v); if (k > -1) f.days.splice(k, 1); else f.days.push(v); }));
+      }
+      if (fl.indexOf('date') > -1) { sh.appendChild(label('Дата')); sh.appendChild(input('date', 'date')); }
+      if (fl.indexOf('range') > -1) {
+        sh.appendChild(label(f.type === 'regular' ? 'Период (можно оставить пустым)' : 'С какого по какое число'));
+        var r = el('div', 'two'); r.appendChild(input('date', 'date')); r.appendChild(input('date', 'dateEnd')); sh.appendChild(r);
+      }
+      if (fl.indexOf('start') > -1) { sh.appendChild(label('Начало (длится 60 минут)')); sh.appendChild(input('time', 'start')); }
+      if (fl.indexOf('time') > -1) {
+        sh.appendChild(label('Время с — по'));
+        var t = el('div', 'two'); t.appendChild(input('time', 'start')); t.appendChild(input('time', 'end')); sh.appendChild(t);
+      }
+      var btns = el('div', 'btns');
+      var cancel = el('button', 'ghost', 'Отмена'); cancel.onclick = function () { ov.remove(); };
+      var ok = el('button', 'primary', 'Сохранить');
+      ok.onclick = function () {
+        var err = '';
+        if (fl.indexOf('title') > -1 && !f.title.trim()) err = 'Напиши название';
+        else if (f.type === 'stay' && !f.place.trim()) err = 'Укажи адрес';
+        else if (f.type === 'regular' && !f.days.length) err = 'Выбери дни недели';
+        else if (f.type === 'slot' && !f.start) err = 'Укажи время начала';
+        else if (fl.indexOf('date') > -1 || fl.indexOf('range') > -1) { if (f.type !== 'regular' && !f.date) err = 'Укажи дату'; }
+        if (!err && (f.type === 'stay' || f.type === 'away') && f.dateEnd && f.dateEnd < f.date) err = 'Дата окончания раньше начала';
+        if (err) { alert(err); return; }
+        var e = { id:Date.now(), type:f.type, who:f.who, title:f.title.trim(), place:f.place.trim(), date:f.date, start:f.start, end:f.end, days:f.days.slice() };
+        if (f.type === 'stay' || f.type === 'away' || f.type === 'regular') e.dateEnd = f.dateEnd;
+        if (f.type === 'regular' && !f.date) e.dateEnd = '';
+        if (f.type === 'slot') e.end = plus60(f.start);
+        data.schedule.push(e); save();
+        if (f.date) { selected = f.date; monthStart = new Date(parse(f.date).getFullYear(), parse(f.date).getMonth(), 1); }
+        ov.remove(); render();
+      };
+      btns.appendChild(cancel); btns.appendChild(ok); sh.appendChild(btns);
+    }
+    draw();
+  }
+
+  /* ---------- Хотелки ---------- */
+  var SHOPS = [
+    ['Ozon', 'https://www.ozon.ru/search/?text='],
+    ['Wildberries', 'https://www.wildberries.ru/catalog/0/search.aspx?search='],
+    ['Яндекс Маркет', 'https://market.yandex.ru/search?text='],
+    ['Мегамаркет', 'https://megamarket.ru/catalog/?q='],
+    ['Avito', 'https://www.avito.ru/rossiya?q='],
+    ['DNS', 'https://www.dns-shop.ru/search/?q=']
+  ];
+  var HOSTS = { 'ozon.ru':'Ozon', 'goldapple.ru':'Золотое яблоко', 'wb.ru':'Wildberries', 'wildberries.ru':'Wildberries', 'market.yandex.ru':'Яндекс Маркет', 'megamarket.ru':'Мегамаркет',
+    'avito.ru':'Avito', 'dns-shop.ru':'DNS', 'citilink.ru':'Ситилинк', 'lamoda.ru':'Lamoda', 'aliexpress.ru':'AliExpress', 'aliexpress.com':'AliExpress' };
+  var openWish = {};
+
+  function storeFromUrl(u) {
+    try {
+      var h = new URL(u).hostname.replace(/^www\./, '');
+      for (var k in HOSTS) if (h === k || h.slice(-k.length - 1) === '.' + k) return HOSTS[k];
+      return h;
+    } catch (e) { return 'Магазин'; }
+  }
+  function fixUrl(u) { u = (u || '').trim(); var m = u.match(/https?:\/\/\S+/i); return m ? m[0] : (u ? 'https://' + u : ''); }
+  function openUrl(u) { try { tg.openLink(u); } catch (e) { window.open(u, '_blank'); } }
+  function money(n) { return Number(n).toLocaleString('ru-RU') + ' ₽'; }
+  function bestOffer(w) {
+    var o = (w.offers || []).filter(function (x) { return x.price > 0; });
+    return o.length ? o.reduce(function (a, b) { return b.price < a.price ? b : a; }) : null;
+  }
+  function personLabel() { return PEOPLE.filter(function (p) { return p.who === person; })[0].label; }
+  function shrink(file, cb) {
+    var r = new FileReader();
+    r.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, 480 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        cb(c.toDataURL('image/jpeg', 0.7));
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+  }
+
+  function renderWishes(main) {
+    var seg = el('div', 'seg');
+    PEOPLE.forEach(function (p) {
+      var b = el('button', person === p.who ? 'on' : '', p.label);
+      b.onclick = function () { person = p.who; render(); };
+      seg.appendChild(b);
+    });
+    main.appendChild(seg);
+
+    function card(w) {
+      var best = bestOffer(w), offers = w.offers || [];
+      var c = el('div', 'wish' + (w.done ? ' done' : ''));
+      var head = el('div', 'whead');
+      var th = el('div', 'thumb');
+      if (w.photo) { var im = document.createElement('img'); im.src = w.photo; th.appendChild(im); } else th.textContent = '🎁';
+      var inf = el('div', 'winfo');
+      inf.appendChild(el('div', 't', (w.done ? '✅ ' : '') + w.title));
+      if (best) inf.appendChild(el('div', 'price', 'от ' + money(best.price) + ' · ' + best.store));
+      if (offers.length) inf.appendChild(el('div', 'm', 'Магазинов: ' + offers.length));
+      head.appendChild(th); head.appendChild(inf); head.appendChild(el('div', 'm', openWish[w.id] ? '▲' : '▼'));
+      head.onclick = function () { openWish[w.id] = !openWish[w.id]; render(); };
+      c.appendChild(head);
+      if (!openWish[w.id]) return c;
+
+      var body = el('div', 'wbody');
+      if (w.desc) body.appendChild(el('div', 'wdesc', w.desc));
+      body.appendChild(el('div', 'lab2', 'Где купить'));
+      if (!offers.length) body.appendChild(el('div', 'm', 'Пока нет магазинов. Добавь ниже или найди через поиск.'));
+      offers.slice().sort(function (a, b) { return (a.price || 1e12) - (b.price || 1e12); }).forEach(function (o) {
+        var row = el('div', 'offer' + (best && o === best ? ' best' : ''));
+        row.appendChild(el('div', 'st', o.store + (best && o === best && offers.length > 1 ? ' · выгоднее всего' : '')));
+        row.appendChild(el('div', 'pr', o.price > 0 ? money(o.price) : '—'));
+        if (o.url) { var ob = el('button', 'openbtn', 'Открыть'); ob.onclick = function () { openUrl(o.url); }; row.appendChild(ob); }
+        var rm = el('button', 'del', '✕');
+        rm.onclick = function () { w.offers = offers.filter(function (x) { return x !== o; }); save(); render(); };
+        row.appendChild(rm); body.appendChild(row);
+      });
+
+      // Добавить магазин
+      var mini = el('div', 'mini');
+      var iu = document.createElement('input'); iu.type = 'text'; iu.placeholder = 'Ссылка на этот товар в магазине'; iu.className = 'full';
+      var is = document.createElement('input'); is.type = 'text'; is.placeholder = 'Магазин (если без ссылки)';
+      var ip = document.createElement('input'); ip.type = 'number'; ip.placeholder = 'Цена, ₽';
+      var ab = el('button', 'primary full', '+ Добавить магазин');
+      ab.onclick = function () {
+        var url = fixUrl(iu.value), price = parseFloat(ip.value) || 0, store = is.value.trim() || (url ? storeFromUrl(url) : '');
+        if (!store) { alert('Вставь ссылку или напиши название магазина'); return; }
+        w.offers = offers.concat([{ store:store, price:price, url:url }]); save(); render();
+      };
+      mini.appendChild(iu); mini.appendChild(is); mini.appendChild(ip); mini.appendChild(ab); body.appendChild(mini);
+
+      // Поиск по магазинам
+      body.appendChild(el('div', 'lab2', 'Найти этот товар в магазинах'));
+      var chips = el('div', 'chips');
+      SHOPS.forEach(function (s) {
+        var b = el('button', 'pick', s[0]);
+        b.onclick = function () { openUrl(s[1] + encodeURIComponent(w.title)); };
+        chips.appendChild(b);
+      });
+      body.appendChild(chips);
+
+      var btns = el('div', 'btns');
+      var dn = el('button', 'ghost', w.done ? '↩︎ Вернуть в список' : '✅ Исполнено');
+      dn.onclick = function () { w.done = !w.done; save(); render(); };
+      var dl = el('button', 'ghost', 'Удалить');
+      dl.onclick = function () { if (confirm('Удалить хотелку?')) { data.wishes = data.wishes.filter(function (x) { return x.id !== w.id; }); save(); render(); } };
+      btns.appendChild(dn); btns.appendChild(dl); body.appendChild(btns);
+      c.appendChild(body);
+      return c;
+    }
+
+    var list = data.wishes.filter(function (w) { return w.who === person; });
+    if (!list.length) main.appendChild(el('div', 'empty', 'Пока пусто. Нажми + и добавь первую хотелку ✨'));
+    list.filter(function (w) { return !w.done; }).forEach(function (w) { main.appendChild(card(w)); });
+    var done = list.filter(function (w) { return w.done; });
+    if (done.length) { main.appendChild(el('div', 'section-title', 'Исполнено (' + done.length + ')')); done.forEach(function (w) { main.appendChild(card(w)); }); }
+    var fab = el('button', 'fab', '+'); fab.onclick = openWishForm; main.appendChild(fab);
+  }
+
+  /* ---------- Автозагрузка по ссылке (ЗАГОТОВКА) ---------- */
+  // Когда появится сервер, впиши сюда его адрес, например 'https://our-app.example.com'.
+  // Пока строка пустая, автозагрузка выключена, всё заполняется вручную.
+  var API_URL = '';
+  // Сервер должен отвечать на GET /api/preview?url=... JSON-ом:
+  // { title, description, image, price, address, menu }  (любое поле можно не присылать)
+  function fetchPreview(url) {
+    return fetch(API_URL + '/api/preview?url=' + encodeURIComponent(url), { headers: { 'X-Telegram-Init-Data': tg.initData || '' } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  function linkAutofill(input, status, apply) {
+    var last = '';
+    function run() {
+      var u = fixUrl(input.value);
+      if (!u || u === last) return;
+      last = u;
+      if (!API_URL) { status.textContent = 'ℹ️ Автозагрузка появится после подключения сервера. Пока заполни вручную.'; return; }
+      status.textContent = '⏳ Загружаю данные…';
+      fetchPreview(u).then(function (d) { apply(d || {}); status.textContent = '✅ Данные подгружены. Проверь и поправь при необходимости.'; })
+        .catch(function () { status.textContent = '⚠️ Не удалось подгрузить. Заполни вручную.'; });
+    }
+    input.onchange = run; input.onblur = run; input.onpaste = function () { setTimeout(run, 60); };
+  }
+
+  /* Общие кусочки форм */
+  function makeSheet(titleText) {
+    var ov = el('div', 'overlay'), sh = el('div', 'sheet');
+    ov.appendChild(sh); document.body.appendChild(ov);
+    ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
+    sh.appendChild(el('h2', '', titleText));
+    return { ov:ov, sh:sh };
+  }
+  function formKit(sh, f) {
+    var kit = {};
+    kit.field = function (lab, node) { sh.appendChild(el('div', 'lab2', lab)); sh.appendChild(node); };
+    kit.inp = function (type, key, ph) { var i = document.createElement('input'); i.type = type; i.placeholder = ph; i.oninput = function () { f[key] = i.value; }; return i; };
+    kit.area = function (key, ph, rows) { var t = document.createElement('textarea'); t.rows = rows || 3; t.placeholder = ph; t.oninput = function () { f[key] = t.value; }; return t; };
+    kit.set = function (node, key, v) { if (v !== undefined && v !== null && v !== '') { f[key] = String(v); node.value = f[key]; } };
+    kit.photo = function () {
+      var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*';
+      var prev = document.createElement('img'); prev.className = 'photoprev'; prev.style.display = 'none';
+      fi.onchange = function () { if (fi.files[0]) shrink(fi.files[0], function (u) { kit.showPhoto(u); }); };
+      kit.showPhoto = function (u) { f.photo = u; prev.src = u; prev.style.display = 'block'; };
+      kit.field('Фото', fi); sh.appendChild(prev);
+    };
+    kit.buttons = function (ov, onSave) {
+      var b = el('div', 'btns'), c = el('button', 'ghost', 'Отмена'), ok = el('button', 'primary', 'Сохранить');
+      c.onclick = function () { ov.remove(); }; ok.onclick = onSave; b.appendChild(c); b.appendChild(ok); sh.appendChild(b);
+    };
+    return kit;
+  }
+  function segControl(main) {
+    var seg = el('div', 'seg');
+    PEOPLE.forEach(function (p) {
+      var b = el('button', person === p.who ? 'on' : '', p.label);
+      b.onclick = function () { person = p.who; render(); };
+      seg.appendChild(b);
+    });
+    main.appendChild(seg);
+  }
+
+  /* ---------- Форма хотелки ---------- */
+  function openWishForm() {
+    var f = { title:'', url:'', price:'', desc:'', photo:'' };
+    var S = makeSheet('Новая хотелка: ' + personLabel()), kit = formKit(S.sh, f);
+    var iUrl = kit.inp('text', 'url', 'https://...'), status = el('div', 'hintline');
+    kit.field('Ссылка на товар (можно вставить текст из «Поделиться»)', iUrl); S.sh.appendChild(status);
+    var iTitle = kit.inp('text', 'title', 'Например: дрель-шуруповёрт'); kit.field('Название', iTitle);
+    var iPrice = kit.inp('number', 'price', '0'); kit.field('Цена, ₽', iPrice);
+    var ta = kit.area('desc', 'Модель, цвет, размер, зачем нужно'); kit.field('Описание', ta);
+    kit.photo();
+    linkAutofill(iUrl, status, function (d) {
+      kit.set(iTitle, 'title', d.title); kit.set(iPrice, 'price', d.price); kit.set(ta, 'desc', d.description);
+      if (d.image) kit.showPhoto(d.image);
+    });
+    kit.buttons(S.ov, function () {
+      var title = f.title.trim();
+      if (!title) { alert('Напиши название'); return; }
+      var url = fixUrl(f.url), price = parseFloat(f.price) || 0, offers = [];
+      if (url || price) offers.push({ store: url ? storeFromUrl(url) : 'Своя цена', price:price, url:url });
+      data.wishes.push({ id:Date.now(), who:person, title:title, desc:f.desc.trim(), photo:f.photo, offers:offers, done:false });
+      save(); S.ov.remove(); render();
+    });
+  }
+
+  /* ---------- Куда сходить ---------- */
+  var openPlace = {};
+  function mapsUrl(p) { return p.url || ('https://yandex.ru/maps/?text=' + encodeURIComponent(p.title + ' ' + (p.address || ''))); }
+
+  function renderPlaces(main) {
+    segControl(main);
+    function card(p) {
+      var c = el('div', 'wish' + (p.status === 'visited' ? ' done' : ''));
+      var head = el('div', 'whead'), th = el('div', 'thumb');
+      if (p.photo) { var im = document.createElement('img'); im.src = p.photo; th.appendChild(im); } else th.textContent = '📍';
+      var inf = el('div', 'winfo');
+      inf.appendChild(el('div', 't', p.title));
+      if (p.address) inf.appendChild(el('div', 'm', p.address));
+      if (p.status === 'visited') inf.appendChild(el('div', 'price', p.rating ? '⭐'.repeat(p.rating) : 'Были'));
+      head.appendChild(th); head.appendChild(inf); head.appendChild(el('div', 'm', openPlace[p.id] ? '▲' : '▼'));
+      head.onclick = function () { openPlace[p.id] = !openPlace[p.id]; render(); };
+      c.appendChild(head);
+      if (!openPlace[p.id]) return c;
+
+      var body = el('div', 'wbody');
+      if (p.desc) body.appendChild(el('div', 'wdesc', p.desc));
+      if (p.menu) { body.appendChild(el('div', 'lab2', 'Меню')); body.appendChild(el('div', 'wdesc', p.menu)); }
+      var go = el('button', 'primary gomap', '🗺 Открыть в Яндекс Картах'); go.onclick = function () { openUrl(mapsUrl(p)); };
+      body.appendChild(go);
+
+      body.appendChild(el('div', 'lab2', p.status === 'visited' ? 'Ваша оценка' : 'Были тут? Поставь оценку'));
+      var chips = el('div', 'chips');
+      [1, 2, 3, 4, 5].forEach(function (n) {
+        var b = el('button', 'pick' + (p.status === 'visited' && p.rating === n ? ' on' : ''), '⭐' + n);
+        b.onclick = function () { p.status = 'visited'; p.rating = n; save(); render(); };
+        chips.appendChild(b);
+      });
+      var nb = el('button', 'pick', 'Без оценки'); nb.onclick = function () { p.status = 'visited'; p.rating = 0; save(); render(); };
+      chips.appendChild(nb); body.appendChild(chips);
+
+      var btns = el('div', 'btns');
+      if (p.status === 'visited') { var back = el('button', 'ghost', '↩︎ Вернуть в «Хотим»'); back.onclick = function () { p.status = 'want'; p.rating = 0; save(); render(); }; btns.appendChild(back); }
+      var dl = el('button', 'ghost', 'Удалить');
+      dl.onclick = function () { if (confirm('Удалить место?')) { data.go = data.go.filter(function (x) { return x.id !== p.id; }); save(); render(); } };
+      btns.appendChild(dl); body.appendChild(btns);
+      c.appendChild(body);
+      return c;
+    }
+    var list = data.go.filter(function (p) { return p.who === person; });
+    if (!list.length) main.appendChild(el('div', 'empty', 'Пока пусто. Нажми + и добавь первое место ✨'));
+    list.filter(function (p) { return p.status !== 'visited'; }).forEach(function (p) { main.appendChild(card(p)); });
+    var seen = list.filter(function (p) { return p.status === 'visited'; });
+    if (seen.length) { main.appendChild(el('div', 'section-title', 'Были (' + seen.length + ')')); seen.forEach(function (p) { main.appendChild(card(p)); }); }
+    var fab = el('button', 'fab', '+'); fab.onclick = openPlaceForm; main.appendChild(fab);
+  }
+
+  function openPlaceForm() {
+    var f = { title:'', url:'', address:'', desc:'', menu:'', photo:'' };
+    var S = makeSheet('Новое место: ' + personLabel()), kit = formKit(S.sh, f);
+    var iUrl = kit.inp('text', 'url', 'https://yandex.ru/maps/...'), status = el('div', 'hintline');
+    kit.field('Ссылка на место в Яндекс Картах', iUrl); S.sh.appendChild(status);
+    var iTitle = kit.inp('text', 'title', 'Например: кофейня на Арбате'); kit.field('Название', iTitle);
+    var iAddr = kit.inp('text', 'address', 'Город, улица, дом'); kit.field('Адрес', iAddr);
+    var ta = kit.area('desc', 'Что за место, чем интересно'); kit.field('Описание', ta);
+    var tm = kit.area('menu', 'Блюда, цены, что хотим заказать', 4); kit.field('Меню', tm);
+    kit.photo();
+    linkAutofill(iUrl, status, function (d) {
+      kit.set(iTitle, 'title', d.title); kit.set(iAddr, 'address', d.address); kit.set(ta, 'desc', d.description); kit.set(tm, 'menu', d.menu);
+      if (d.image) kit.showPhoto(d.image);
+    });
+    kit.buttons(S.ov, function () {
+      var title = f.title.trim();
+      if (!title) { alert('Напиши название'); return; }
+      data.go.push({ id:Date.now(), who:person, title:title, address:f.address.trim(), url:fixUrl(f.url), desc:f.desc.trim(), menu:f.menu.trim(), photo:f.photo, status:'want', rating:0 });
+      save(); S.ov.remove(); render();
+    });
+  }
+
+  /* ---------- Что посмотреть ---------- */
+  // Токен для поиска фильмов (kinopoisk.dev). Пока пусто: поиск выключен, можно добавлять по названию вручную.
+  var KP_TOKEN = '';
+  var KP_API = 'https://api.kinopoisk.dev/v1.4';
+  var openWatch = {};
+
+  function kpGet(path) {
+    return fetch(KP_API + path, { headers: { 'X-API-KEY': KP_TOKEN } }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  function mapMovie(m) {
+    var tr = ((m.videos || {}).trailers || []).filter(function (t) { return t.url; })[0];
+    var kinds = { 'movie':'Фильм', 'tv-series':'Сериал', 'cartoon':'Мультфильм', 'anime':'Аниме', 'animated-series':'Мультсериал' };
+    return {
+      title: m.name || m.alternativeName || m.enName || 'Без названия', year: m.year || '', kind: kinds[m.type] || 'Кино',
+      genres: (m.genres || []).map(function (g) { return g.name; }).slice(0, 3).join(', '),
+      desc: m.description || m.shortDescription || '', poster: (m.poster || {}).url || (m.poster || {}).previewUrl || '',
+      kp: (m.rating || {}).kp || 0, imdb: (m.rating || {}).imdb || 0, trailer: tr ? tr.url : '', kpId: m.id || 0
+    };
+  }
+  function ratingLine(w) {
+    var a = [];
+    if (w.kp > 0) a.push('КП ' + Number(w.kp).toFixed(1));
+    if (w.imdb > 0) a.push('IMDb ' + Number(w.imdb).toFixed(1));
+    return a.join(' · ');
+  }
+
+  function renderWatch(main) {
+    segControl(main);
+    function card(w) {
+      var enc = encodeURIComponent(w.title);
+      var c = el('div', 'wish' + (w.status === 'seen' ? ' done' : ''));
+      var head = el('div', 'whead'), th = el('div', 'thumb');
+      if (w.poster) { var im = document.createElement('img'); im.src = w.poster; th.appendChild(im); } else th.textContent = '🎬';
+      var inf = el('div', 'winfo');
+      inf.appendChild(el('div', 't', w.title + (w.year ? ' (' + w.year + ')' : '')));
+      var sub = [w.kind, w.genres].filter(Boolean).join(' · ');
+      if (sub) inf.appendChild(el('div', 'm', sub));
+      if (ratingLine(w)) inf.appendChild(el('div', 'price', ratingLine(w)));
+      if (w.status === 'seen' && w.myRating) inf.appendChild(el('div', 'm', 'Наша оценка: ' + '⭐'.repeat(w.myRating)));
+      head.appendChild(th); head.appendChild(inf); head.appendChild(el('div', 'm', openWatch[w.id] ? '▲' : '▼'));
+      head.onclick = function () { openWatch[w.id] = !openWatch[w.id]; render(); };
+      c.appendChild(head);
+      if (!openWatch[w.id]) return c;
+
+      var body = el('div', 'wbody');
+      if (w.desc) body.appendChild(el('div', 'wdesc', w.desc));
+      var tb = el('button', 'primary gomap', '▶ Смотреть трейлер');
+      tb.onclick = function () { openUrl(w.trailer || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(w.title + ' ' + (w.year || '') + ' трейлер'))); };
+      body.appendChild(tb);
+
+      body.appendChild(el('div', 'lab2', 'Рейтинги и поиск'));
+      var links = el('div', 'chips');
+      [['Кинопоиск', w.kpId ? 'https://www.kinopoisk.ru/film/' + w.kpId + '/' : 'https://www.kinopoisk.ru/index.php?kp_query=' + enc],
+       ['IMDb', 'https://www.imdb.com/find/?q=' + enc],
+       ['Rotten Tomatoes', 'https://www.rottentomatoes.com/search?search=' + enc]].forEach(function (l) {
+        var b = el('button', 'pick', l[0]); b.onclick = function () { openUrl(l[1]); }; links.appendChild(b);
+      });
+      body.appendChild(links);
+
+      body.appendChild(el('div', 'lab2', w.status === 'seen' ? 'Ваша оценка' : 'Посмотрели? Поставь оценку'));
+      var chips = el('div', 'chips');
+      [1, 2, 3, 4, 5].forEach(function (n) {
+        var b = el('button', 'pick' + (w.status === 'seen' && w.myRating === n ? ' on' : ''), '⭐' + n);
+        b.onclick = function () { w.status = 'seen'; w.myRating = n; save(); render(); };
+        chips.appendChild(b);
+      });
+      var nb = el('button', 'pick', 'Без оценки'); nb.onclick = function () { w.status = 'seen'; w.myRating = 0; save(); render(); };
+      chips.appendChild(nb); body.appendChild(chips);
+
+      var btns = el('div', 'btns');
+      if (w.status === 'seen') { var back = el('button', 'ghost', '↩︎ Вернуть в «Хотим»'); back.onclick = function () { w.status = 'want'; w.myRating = 0; save(); render(); }; btns.appendChild(back); }
+      var dl = el('button', 'ghost', 'Удалить');
+      dl.onclick = function () { if (confirm('Удалить?')) { data.watch = data.watch.filter(function (x) { return x.id !== w.id; }); save(); render(); } };
+      btns.appendChild(dl); body.appendChild(btns);
+      c.appendChild(body);
+      return c;
+    }
+    var list = data.watch.filter(function (w) { return w.who === person; });
+    if (!list.length) main.appendChild(el('div', 'empty', 'Пока пусто. Нажми + и найди фильм или сериал 🍿'));
+    list.filter(function (w) { return w.status !== 'seen'; }).forEach(function (w) { main.appendChild(card(w)); });
+    var seen = list.filter(function (w) { return w.status === 'seen'; });
+    if (seen.length) { main.appendChild(el('div', 'section-title', 'Посмотрели (' + seen.length + ')')); seen.forEach(function (w) { main.appendChild(card(w)); }); }
+    var fab = el('button', 'fab', '+'); fab.onclick = openWatchForm; main.appendChild(fab);
+  }
+
+  function openWatchForm() {
+    var S = makeSheet('Что посмотреть: ' + personLabel());
+    var q = document.createElement('input'); q.type = 'text'; q.placeholder = 'Например: Мстители. Финал';
+    var go = el('button', 'primary gomap', '🔍 Найти');
+    var info = el('div', 'hintline'), box = el('div');
+    S.sh.appendChild(q); S.sh.appendChild(go); S.sh.appendChild(info); S.sh.appendChild(box);
+
+    function add(item) {
+      data.watch.push(Object.assign({ id:Date.now(), who:person, status:'want', myRating:0 }, item));
+      save(); S.ov.remove(); render();
+    }
+    function showManual(t) {
+      var b = el('button', 'ghost', 'Добавить «' + t + '» без поиска'); b.style.width = '100%'; b.style.marginTop = '8px';
+      b.onclick = function () { add({ title:t, year:'', kind:'', genres:'', desc:'', poster:'', kp:0, imdb:0, trailer:'', kpId:0 }); };
+      box.appendChild(b);
+    }
+    function pick(m) {
+      info.textContent = '⏳ Добавляю…';
+      kpGet('/movie/' + m.id).then(mapMovie).catch(function () { return mapMovie(m); }).then(add);
+    }
+    function search() {
+      var t = q.value.trim(); if (!t) return;
+      box.innerHTML = '';
+      if (!KP_TOKEN) {
+        info.textContent = 'ℹ️ Автопоиск пока выключен. Можно добавить по названию: в карточке всё равно будут кнопки трейлера, Кинопоиска, IMDb и Rotten Tomatoes.';
+        showManual(t); return;
+      }
+      info.textContent = '⏳ Ищу…';
+      kpGet('/movie/search?page=1&limit=6&query=' + encodeURIComponent(t)).then(function (d) {
+        var docs = d.docs || [];
+        info.textContent = docs.length ? 'Выбери нужный вариант:' : 'Ничего не нашлось.';
+        docs.forEach(function (m) {
+          var r = el('div', 'res'), im = document.createElement('img');
+          var p = (m.poster || {}).previewUrl || (m.poster || {}).url; if (p) im.src = p;
+          var tx = el('div', ''); tx.appendChild(el('div', '', (m.name || m.alternativeName || '?') + (m.year ? ' (' + m.year + ')' : '')));
+          tx.appendChild(el('div', 'rt', ratingLine({ kp:(m.rating || {}).kp, imdb:(m.rating || {}).imdb })));
+          r.appendChild(im); r.appendChild(tx); r.onclick = function () { pick(m); }; box.appendChild(r);
+        });
+        showManual(t);
+      }).catch(function () { info.textContent = '⚠️ Не удалось найти. Проверь токен и интернет.'; showManual(t); });
+    }
+    go.onclick = search; q.onkeydown = function (e) { if (e.key === 'Enter') search(); };
+  }
+
+  /* ---------- Что поесть ---------- */
+  var openDish = {};
+  function lines(v) { return (Array.isArray(v) ? v : String(v || '').split('\n')).map(function (x) { return String(x).trim(); }).filter(Boolean); }
+
+  function renderEat(main) {
+    segControl(main);
+    var open = data.shop.filter(function (x) { return !x.done; }).length;
+    var sb = el('button', 'ghost shopbtn', '🛒 Корзина' + (open ? ' (' + open + ')' : ''));
+    sb.onclick = goCart; main.appendChild(sb);
+
+    function card(d) {
+      var enc = encodeURIComponent(d.title);
+      var c = el('div', 'wish'), head = el('div', 'whead'), th = el('div', 'thumb');
+      if (d.photo) { var im = document.createElement('img'); im.src = d.photo; th.appendChild(im); } else th.textContent = '🍝';
+      var inf = el('div', 'winfo');
+      inf.appendChild(el('div', 't', d.title));
+      var sub = [];
+      if (d.ingredients.length) sub.push('Ингредиентов: ' + d.ingredients.length);
+      if (d.cooked) sub.push('готовили ' + d.cooked + ' р.');
+      if (sub.length) inf.appendChild(el('div', 'm', sub.join(' · ')));
+      head.appendChild(th); head.appendChild(inf); head.appendChild(el('div', 'm', openDish[d.id] ? '▲' : '▼'));
+      head.onclick = function () { openDish[d.id] = !openDish[d.id]; render(); };
+      c.appendChild(head);
+      if (!openDish[d.id]) return c;
+
+      var body = el('div', 'wbody');
+      if (d.desc) body.appendChild(el('div', 'wdesc', d.desc));
+      var cook = el('button', 'primary gomap', '🛒 Хотим приготовить: что купить');
+      cook.onclick = function () { openCook(d); }; body.appendChild(cook);
+      if (d.ingredients.length) { body.appendChild(el('div', 'lab2', 'Ингредиенты')); body.appendChild(el('div', 'wdesc', d.ingredients.map(function (x) { return '• ' + x; }).join('\n'))); }
+      if (d.recipe) { body.appendChild(el('div', 'lab2', 'Рецепт')); body.appendChild(el('div', 'wdesc', d.recipe)); }
+      if (!d.ingredients.length && !d.recipe) body.appendChild(el('div', 'hintline', 'Рецепта пока нет. Найди его по кнопкам ниже и добавь блюдо заново с рецептом.'));
+
+      body.appendChild(el('div', 'lab2', 'Найти рецепт'));
+      var links = el('div', 'chips');
+      [['Eda.ru', 'https://eda.ru/recipesearch?q=' + enc], ['Povar.ru', 'https://povar.ru/xmlsearch?query=' + enc],
+       ['YouTube', 'https://www.youtube.com/results?search_query=' + encodeURIComponent('рецепт ' + d.title)]].forEach(function (l) {
+        var b = el('button', 'pick', l[0]); b.onclick = function () { openUrl(l[1]); }; links.appendChild(b);
+      });
+      body.appendChild(links);
+
+      var btns = el('div', 'btns');
+      var ck = el('button', 'ghost', '✅ Приготовили'); ck.onclick = function () { d.cooked = (d.cooked || 0) + 1; save(); render(); };
+      var dl = el('button', 'ghost', 'Удалить');
+      dl.onclick = function () { if (confirm('Удалить блюдо?')) { data.eat = data.eat.filter(function (x) { return x.id !== d.id; }); save(); render(); } };
+      var ed = el('button', 'ghost', '✏️ Изменить'); ed.onclick = function () { openEatForm(d); };
+      btns.appendChild(ck); btns.appendChild(ed); btns.appendChild(dl); body.appendChild(btns);
+      c.appendChild(body);
+      return c;
+    }
+    var list = data.eat.filter(function (d) { return d.who === person; });
+    if (!list.length) main.appendChild(el('div', 'empty', 'Пока пусто. Нажми + и добавь любимое блюдо 🍝'));
+    list.forEach(function (d) { main.appendChild(card(d)); });
+    var fab = el('button', 'fab', '+'); fab.onclick = function () { openEatForm(); }; main.appendChild(fab);
+  }
+
+  function openEatForm(d0) {
+    var f = { title:'', url:'', desc:'', photo:'', ingredients:'', recipe:'' };
+    var S = makeSheet(d0 ? 'Изменить блюдо' : 'Новое блюдо: ' + personLabel()), kit = formKit(S.sh, f);
+    var iTitle = kit.inp('text', 'title', 'Например: паста карбонара'); kit.field('Название', iTitle);
+    var status = el('div', 'hintline');
+    var iUrl = kit.inp('text', 'url', 'https://...'); kit.field('Ссылка на рецепт (необязательно)', iUrl);
+    var find = el('button', 'ghost', '🔍 Подгрузить рецепт по названию'); find.style.width = '100%'; find.style.marginTop = '8px';
+    S.sh.appendChild(find); S.sh.appendChild(status);
+    var ta = kit.area('desc', 'Чем вкусно, на сколько порций', 2); kit.field('Описание', ta);
+    var ti = kit.area('ingredients', 'По одному в строке:\nСпагетти — 400 г\nЯйца — 4 шт', 6); kit.field('Ингредиенты', ti);
+    var tr = kit.area('recipe', 'Шаги приготовления', 6); kit.field('Рецепт', tr);
+    kit.photo();
+    if (d0) { kit.set(iTitle, 'title', d0.title); kit.set(ta, 'desc', d0.desc); kit.set(ti, 'ingredients', d0.ingredients.join('\n')); kit.set(tr, 'recipe', d0.recipe); if (d0.photo) kit.showPhoto(d0.photo); }
+    function apply(d) {
+      if (!f.title.trim()) kit.set(iTitle, 'title', d.title);
+      kit.set(ta, 'desc', d.description); kit.set(tr, 'recipe', d.recipe);
+      if (d.ingredients) kit.set(ti, 'ingredients', lines(d.ingredients).join('\n'));
+      if (d.image) kit.showPhoto(d.image);
+    }
+    linkAutofill(iUrl, status, apply);
+    find.onclick = function () {
+      var t = f.title.trim();
+      if (!t) { alert('Сначала напиши название блюда'); return; }
+      if (!API_URL) { status.textContent = 'ℹ️ Автоподбор рецепта появится после подключения сервера. Пока впиши рецепт вручную или найди его через кнопки в карточке блюда.'; return; }
+      status.textContent = '⏳ Ищу рецепт…';
+      fetch(API_URL + '/api/recipe?q=' + encodeURIComponent(t), { headers: { 'X-Telegram-Init-Data': tg.initData || '' } })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { apply(d || {}); status.textContent = '✅ Рецепт подгружен. Проверь и поправь при необходимости.'; })
+        .catch(function () { status.textContent = '⚠️ Не удалось найти рецепт. Заполни вручную.'; });
+    };
+    kit.buttons(S.ov, function () {
+      var title = f.title.trim();
+      if (!title) { alert('Напиши название блюда'); return; }
+      if (d0) { d0.title = title; d0.desc = f.desc.trim(); d0.photo = f.photo; d0.ingredients = lines(f.ingredients); d0.recipe = f.recipe.trim(); }
+      else data.eat.push({ id:Date.now(), who:person, title:title, desc:f.desc.trim(), photo:f.photo, ingredients:lines(f.ingredients), recipe:f.recipe.trim(), cooked:0 });
+      save(); S.ov.remove(); render();
+    });
+  }
+
+  // Что купить для блюда
+  function openCook(d) {
+    var S = makeSheet('🛒 ' + d.title);
+    if (!d.ingredients.length) {
+      S.sh.appendChild(el('div', 'empty', 'У блюда нет списка ингредиентов. Добавь блюдо заново с ингредиентами, тогда список покупок соберётся сам.'));
+      var c = el('button', 'ghost', 'Закрыть'); c.style.width = '100%'; c.onclick = function () { S.ov.remove(); }; S.sh.appendChild(c); return;
+    }
+    S.sh.appendChild(el('div', 'hintline', 'Сними галочку с того, что уже есть дома.'));
+    var checks = [];
+    d.ingredients.forEach(function (t) {
+      var r = el('label', 'item'), cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+      r.appendChild(cb); r.appendChild(el('div', 'body', t)); S.sh.appendChild(r); checks.push([cb, t]);
+    });
+    var btns = el('div', 'btns'), cancel = el('button', 'ghost', 'Отмена'), add = el('button', 'primary', 'В список покупок');
+    cancel.onclick = function () { S.ov.remove(); };
+    add.onclick = function () {
+      checks.forEach(function (p) {
+        if (!p[0].checked) return;
+        var pi = parseIngredient(p[1]);
+        addToCart(pi.text, d.title, pi.qty, pi.unit);
+      });
+      save(); S.ov.remove(); goCart();
+    };
+    btns.appendChild(cancel); btns.appendChild(add); S.sh.appendChild(btns);
+  }
+
+  /* ---------- Что купить ---------- */
+  var buySub = 'cart', orderFilter = 'Все';
+  var BUY_SUBS = [['cart', '🛒 Корзина'], ['supplies', '🧴 Расходники'], ['orders', '📦 Заказы']];
+  var SUGGEST = ['Туалетная бумага', 'Бумажные полотенца', 'Зубная паста', 'Крем для рук', 'Крем для лица', 'Шампунь', 'Мыло', 'Стиральный порошок'];
+  var STORE_CHIPS = ['Ozon', 'Wildberries', 'Золотое яблоко'];
+
+  function goCart() { current = 'buy'; buySub = 'cart'; render(); window.scrollTo(0, 0); }
+  function inCart(text) { return data.shop.some(function (x) { return !x.done && x.text.toLowerCase() === text.toLowerCase(); }); }
+  function addRow(placeholder, onAdd) {
+    var row = el('div', 'addrow'), i = document.createElement('input'); i.type = 'text'; i.placeholder = placeholder;
+    var b = el('button', 'primary', 'Добавить');
+    function go() {
+      var v = i.value.trim(); if (!v) return;
+      onAdd(v);
+      setTimeout(function () { var x = document.querySelector('.addrow input'); if (x) x.focus(); }, 0);
+    }
+    b.onclick = go; i.onkeydown = function (e) { if (e.key === 'Enter') go(); };
+    row.appendChild(i); row.appendChild(b); return row;
+  }
+
+  function renderBuy(main) {
+    var seg = el('div', 'seg');
+    BUY_SUBS.forEach(function (s) {
+      var b = el('button', buySub === s[0] ? 'on' : '', s[1]);
+      b.onclick = function () { buySub = s[0]; render(); };
+      seg.appendChild(b);
+    });
+    main.appendChild(seg);
+    if (buySub === 'cart') renderCart(main); else if (buySub === 'supplies') renderSupplies(main); else renderOrders(main);
+  }
+
+  var UNITS = ['шт', 'кг', 'г', 'л', 'уп'];
+  var openCartItem = null;
+  function fmtQty(it) { return (it.qty || 1) + ' ' + (it.unit || 'шт'); }
+  function cartFind(text) { return data.shop.filter(function (x) { return !x.done && x.text.toLowerCase() === text.toLowerCase(); })[0]; }
+  function copyText(txt) {
+    try { navigator.clipboard.writeText(txt).then(function () { alert('Скопировано'); }, function () { alert(txt); }); } catch (e) { alert(txt); }
+  }
+  // «Яйца — 4 шт» -> { text:'Яйца', qty:4, unit:'шт' }
+  function parseIngredient(str) {
+    var t = String(str).trim(), m = t.match(/^(.+?)\s+[—–-]\s+(\d+(?:[.,]\d+)?)\s*([^\d\s,.].*)?$/);
+    if (!m) return { text:t, qty:1, unit:'шт' };
+    var u = (m[3] || '').trim().toLowerCase();
+    var map = { 'шт':'шт', 'шт.':'шт', 'штук':'шт', 'штуки':'шт', 'штука':'шт', 'г':'г', 'гр':'г', 'гр.':'г', 'грамм':'г', 'кг':'кг', 'л':'л', 'литр':'л', 'литра':'л', 'уп':'уп', 'уп.':'уп', 'упак.':'уп', 'упаковка':'уп' };
+    return { text:m[1].trim(), qty:parseFloat(m[2].replace(',', '.')) || 1, unit:map[u] || u || 'шт' };
+  }
+  function addToCart(text, dish, qty, unit) {
+    qty = qty > 0 ? qty : 1; unit = unit || 'шт';
+    var ex = data.shop.filter(function (x) { return !x.done && x.text.toLowerCase() === text.toLowerCase() && (x.unit || 'шт') === unit; })[0];
+    if (ex) ex.qty = Math.round(((ex.qty || 1) + qty) * 100) / 100;
+    else data.shop.push({ id:Date.now() + Math.random(), text:text, dish:dish || '', qty:qty, unit:unit, note:'', url:'', done:false });
+  }
+  function cartBody() {
+    return data.shop.filter(function (x) { return !x.done; })
+      .map(function (it) { return '• ' + it.text + ': ' + fmtQty(it) + (it.note ? ' (' + it.note + ')' : ''); }).join('\n');
+  }
+  function shareCart() {
+    var head = '🛒 Список покупок', body = cartBody();
+    try { tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(head) + '&text=' + encodeURIComponent(body)); }
+    catch (e) { copyText(head + '\n' + body); }
+  }
+
+  function renderCart(main) {
+    data.shop.forEach(function (x) { if (!(x.qty > 0)) x.qty = 1; if (!x.unit) x.unit = 'шт'; });
+    main.appendChild(addRow('Добавить в корзину: молоко, хлеб…', function (v) { addToCart(v, ''); save(); render(); }));
+    if (!data.shop.length) {
+      main.appendChild(el('div', 'empty', 'Список пуст'));
+      main.appendChild(el('div', 'hintline', 'Добавь позицию выше. Ингредиенты блюда попадут сюда сами: «Поесть» → блюдо → «Хотим приготовить».'));
+      return;
+    }
+    var open = data.shop.filter(function (x) { return !x.done; }), done = data.shop.filter(function (x) { return x.done; });
+    main.appendChild(el('div', 'cartsum', 'Осталось купить: ' + open.length + ' из ' + data.shop.length));
+
+    var bar = el('div', 'cartbar');
+    if (open.length) {
+      var sd = el('button', 'primary', '📨 Отправить'); sd.onclick = shareCart;
+      var cp = el('button', 'ghost', '📋 Скопировать'); cp.onclick = function () { copyText('🛒 Список покупок\n' + cartBody()); };
+      bar.appendChild(sd); bar.appendChild(cp);
+    } else bar.appendChild(el('div', 'hintline', 'Список пуст'));
+    var clr = el('button', 'ghost', '🧹 Убрать купленное'); clr.disabled = !done.length;
+    clr.onclick = function () { if (confirm('Убрать купленное (' + done.length + ')?')) { data.shop = data.shop.filter(function (x) { return !x.done; }); save(); render(); } };
+    bar.appendChild(clr); main.appendChild(bar);
+
+    function row(it) {
+      var wrap = el('div', 'citem' + (it.done ? ' done' : '')), r = el('div', 'crow'), left = el('div', 'cleft');
+      left.appendChild(el('span', 'circ' + (it.done ? ' on' : ''), it.done ? '✓' : ''));
+      var nb = el('div', 'cname'); nb.appendChild(el('div', 't', it.text)); if (it.note) nb.appendChild(el('div', 'm', it.note));
+      left.appendChild(nb);
+      left.onclick = function () { it.done = !it.done; save(); render(); };
+
+      var st = el('div', 'stepper'), minus = el('button', 'sbtn', '−'), plus = el('button', 'sbtn', '+'), col = el('div', 'qcol');
+      var q = document.createElement('input'); q.type = 'number'; q.className = 'qinp'; q.value = it.qty; q.min = 1; q.step = 'any'; q.setAttribute('inputmode', 'decimal');
+      minus.onclick = function () { if (it.qty > 1) { it.qty = Math.max(1, Math.round((it.qty - 1) * 100) / 100); save(); render(); } };
+      plus.onclick = function () { it.qty = Math.round((it.qty + 1) * 100) / 100; save(); render(); };
+      q.onchange = function () { var v = parseFloat(String(q.value).replace(',', '.')); it.qty = v >= 1 ? v : 1; save(); render(); };
+      col.appendChild(q); col.appendChild(el('div', 'unit', it.unit));
+      st.appendChild(minus); st.appendChild(col); st.appendChild(plus);
+
+      var more = el('button', 'mbtn', (it.note ? '📝' : '') + (it.url ? '🔗' : '') + (openCartItem === it.id ? '▴' : '▾'));
+      more.onclick = function () { openCartItem = openCartItem === it.id ? null : it.id; render(); };
+      var del = el('button', 'del', '✕'); del.onclick = function () { data.shop = data.shop.filter(function (x) { return x !== it; }); save(); render(); };
+      r.appendChild(left); r.appendChild(st); r.appendChild(more); r.appendChild(del); wrap.appendChild(r);
+
+      if (openCartItem === it.id) {
+        var pn = el('div', 'cpanel');
+        function field(lab, node) { pn.appendChild(el('div', 'lab2', lab)); pn.appendChild(node); }
+        var inote = document.createElement('input'); inote.type = 'text'; inote.value = it.note || ''; inote.placeholder = 'Добавь пояснение, например: цвет, марка, размер';
+        inote.oninput = function () { it.note = inote.value; save(); };
+        var iurl = document.createElement('input'); iurl.type = 'text'; iurl.value = it.url || ''; iurl.placeholder = 'Ссылка на товар (Ozon, WB…)';
+        var sel = document.createElement('select');
+        (UNITS.indexOf(it.unit) < 0 ? UNITS.concat([it.unit]) : UNITS).forEach(function (u) { var o = document.createElement('option'); o.value = u; o.textContent = u; if (u === it.unit) o.selected = true; sel.appendChild(o); });
+        sel.onchange = function () { it.unit = sel.value; save(); render(); };
+        var ob = el('button', 'openbtn', 'Открыть ссылку'); ob.style.marginTop = '10px'; ob.style.display = it.url ? 'inline-block' : 'none';
+        ob.onclick = function () { openUrl(fixUrl(it.url)); };
+        iurl.oninput = function () { it.url = iurl.value; save(); ob.style.display = it.url.trim() ? 'inline-block' : 'none'; };
+        field('Пояснение', inote); field('Ссылка', iurl); field('Единица измерения', sel); pn.appendChild(ob);
+        wrap.appendChild(pn);
+      }
+      return wrap;
+    }
+    var groups = {}, order = [];
+    open.forEach(function (it) { var g = it.dish || 'Прочее'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(it); });
+    order.forEach(function (g) { main.appendChild(el('div', 'section-title', g)); groups[g].forEach(function (it) { main.appendChild(row(it)); }); });
+    if (done.length) { main.appendChild(el('div', 'section-title', 'Куплено (' + done.length + ')')); done.forEach(function (it) { main.appendChild(row(it)); }); }
+  }
+
+  function renderSupplies(main) {
+    main.appendChild(addRow('Новый расходник: бумага, крем…', function (v) {
+      if (!data.supplies.some(function (x) { return x.text.toLowerCase() === v.toLowerCase(); })) data.supplies.push({ id:Date.now(), text:v });
+      save(); render();
+    }));
+    main.appendChild(el('div', 'hintline', 'Расходники: то, что заканчивается снова и снова. Когда пора докупить, нажми «В корзину».'));
+    var have = data.supplies.map(function (x) { return x.text.toLowerCase(); });
+    var sug = SUGGEST.filter(function (t) { return have.indexOf(t.toLowerCase()) < 0; });
+    if (sug.length) {
+      main.appendChild(el('div', 'lab2', 'Быстро добавить'));
+      var chips = el('div', 'chips');
+      sug.forEach(function (t) {
+        var b = el('button', 'pick', '+ ' + t);
+        b.onclick = function () { data.supplies.push({ id:Date.now() + Math.random(), text:t }); save(); render(); };
+        chips.appendChild(b);
+      });
+      main.appendChild(chips);
+    }
+    if (data.supplies.length) main.appendChild(el('div', 'section-title', 'Наши расходники'));
+    data.supplies.forEach(function (it) {
+      var r = el('div', 'item');
+      var bd = el('div', 'body', it.text), ex = cartFind(it.text);
+      if (ex) bd.appendChild(el('div', 'm', 'В корзине: ' + fmtQty(ex)));
+      r.appendChild(bd);
+      var b = el('button', 'openbtn', 'В корзину');
+      b.onclick = function () { addToCart(it.text, 'Расходники', 1, 'шт'); save(); render(); };
+      var del = el('button', 'del', '✕'); del.onclick = function () { data.supplies = data.supplies.filter(function (x) { return x !== it; }); save(); render(); };
+      r.appendChild(b); r.appendChild(del); main.appendChild(r);
+    });
+  }
+
+  function renderOrders(main) {
+    var chips = el('div', 'chips'); chips.style.marginBottom = '12px';
+    ['Все'].concat(STORE_CHIPS, ['Другое']).forEach(function (f) {
+      var b = el('button', 'pick' + (orderFilter === f ? ' on' : ''), f);
+      b.onclick = function () { orderFilter = f; render(); };
+      chips.appendChild(b);
+    });
+    main.appendChild(chips);
+    var list = data.orders.filter(function (o) {
+      return orderFilter === 'Все' || o.store === orderFilter || (orderFilter === 'Другое' && STORE_CHIPS.indexOf(o.store) < 0);
+    });
+    if (!list.length) main.appendChild(el('div', 'empty', 'Пока пусто. Нажми + и вставь ссылку на товар из Ozon, Wildberries или Золотого яблока.'));
+    list.sort(function (a, b) { return (a.done ? 1 : 0) - (b.done ? 1 : 0); }).forEach(function (o) {
+      var r = el('div', 'item' + (o.done ? ' done' : '')), cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!o.done;
+      cb.onchange = function () { o.done = cb.checked; save(); render(); };
+      var th = el('div', 'thumb s');
+      if (o.photo) { var im = document.createElement('img'); im.src = o.photo; th.appendChild(im); } else th.textContent = '🛍';
+      var b = el('div', 'body', o.title);
+      b.appendChild(el('div', 'm', [o.store, o.price > 0 ? money(o.price) : '', o.note].filter(Boolean).join(' · ')));
+      var ob = el('button', 'openbtn', 'Открыть'); ob.onclick = function () { openUrl(o.url); };
+      var del = el('button', 'del', '✕'); del.onclick = function () { if (confirm('Удалить ссылку?')) { data.orders = data.orders.filter(function (x) { return x !== o; }); save(); render(); } };
+      r.appendChild(cb); r.appendChild(th); r.appendChild(b); r.appendChild(ob); r.appendChild(del); main.appendChild(r);
+    });
+    var fab = el('button', 'fab', '+'); fab.onclick = openOrderForm; main.appendChild(fab);
+  }
+
+  function openOrderForm() {
+    var f = { url:'', title:'', price:'', note:'', photo:'' };
+    var S = makeSheet('Новая ссылка на товар'), kit = formKit(S.sh, f);
+    var iUrl = kit.inp('text', 'url', 'Ozon, Wildberries, Золотое яблоко…'), status = el('div', 'hintline');
+    kit.field('Ссылка на товар (можно вставить текст из «Поделиться»)', iUrl); S.sh.appendChild(status);
+    var iTitle = kit.inp('text', 'title', 'Название товара'); kit.field('Название', iTitle);
+    var iPrice = kit.inp('number', 'price', '0'); kit.field('Цена, ₽', iPrice);
+    var tn = kit.area('note', 'Размер, цвет, зачем', 2); kit.field('Заметка', tn);
+    kit.photo();
+    linkAutofill(iUrl, status, function (d) {
+      kit.set(iTitle, 'title', d.title); kit.set(iPrice, 'price', d.price);
+      if (d.image) kit.showPhoto(d.image);
+    });
+    kit.buttons(S.ov, function () {
+      var url = fixUrl(f.url);
+      if (!url) { alert('Вставь ссылку на товар'); return; }
+      var store = storeFromUrl(url);
+      data.orders.push({ id:Date.now(), url:url, store:store, title:f.title.trim() || store, price:parseFloat(f.price) || 0, note:f.note.trim(), photo:f.photo, done:false });
+      save(); S.ov.remove(); render();
+    });
+  }
+
+  function render() {
+    var tab = TABS.filter(function (t) { return t.id === current; })[0];
+    document.getElementById('title').textContent = tab.icon + ' ' + tab.title;
+    document.getElementById('subtitle').textContent = tab.hint;
+    var main = document.getElementById('content'); main.innerHTML = '';
+    renderNav();
+    if (tab.schedule) renderSchedule(main); else if (tab.id === 'wishes') renderWishes(main); else if (tab.id === 'go') renderPlaces(main); else if (tab.id === 'watch') renderWatch(main); else if (tab.id === 'eat') renderEat(main); else if (tab.id === 'buy') renderBuy(main); else renderList(tab, main);
+  }
+
+  load(); render();
+</script>
+</body>
+</html>
